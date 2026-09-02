@@ -1,0 +1,59 @@
+{
+  "name": "tiny-typed-env",
+  "version": "1.0.0",
+  "description": "Tiny typed environment loader. Built-in schemas or Zod/Valibot. Fails at boot. Works in Node, Bun, Deno, and Workers.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "env",
+    "environment",
+    "environment-variables",
+    "typescript",
+    "zod",
+    "valibot",
+    "standard-schema",
+    "dotenv",
+    "validation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_GITHUB/tiny-typed-env.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR_GITHUB/tiny-typed-env/issues"
+  },
+  "homepage": "https://github.com/YOUR_GITHUB/tiny-typed-env#readme",
+  "author": "Muzammal Safdar",
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
+  }
+}
