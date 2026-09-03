@@ -38,7 +38,17 @@ npm install tiny-typed-env
 
 ## Schema (full)
 
-Use built-in `s` (zero extra packages) or pass Zod/Valibot schemas.
+Use built-in `s` (zero extra packages) or pass Zod, Valibot, or ArkType schemas.
+
+Zod, Valibot, and ArkType are optional. Install only the schema library you use:
+
+```bash
+npm install zod
+# or
+npm install valibot
+# or
+npm install arktype
+```
 
 | Helper | Input examples | Output type |
 |---|---|---|
@@ -81,7 +91,7 @@ export const env = createEnv({
 export type Env = typeof env;
 ```
 
-### Zod (optional)
+### Zod, Valibot, and ArkType (optional)
 
 ```ts
 import { loadEnv } from "tiny-typed-env";
@@ -97,6 +107,21 @@ export const env = loadEnv(
 ```
 
 Needs Zod 3.24+ or Zod 4 (Standard Schema support).
+
+Valibot and ArkType schemas work the same way:
+
+```ts
+import * as v from "valibot";
+import { type } from "arktype";
+import { loadEnv } from "tiny-typed-env";
+
+const env = loadEnv({
+  API_KEY: v.string(),
+  PORT: type("string.numeric.parse"),
+}, { runtimeEnv: process.env });
+```
+
+All external schemas must support synchronous Standard Schema validation.
 
 ## APIs
 
