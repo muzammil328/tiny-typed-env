@@ -1,6 +1,6 @@
 {
   "name": "tiny-typed-env",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tiny typed environment loader. Built-in schemas or Zod/Valibot. Fails at boot. Works in Node, Bun, Deno, and Workers.",
   "license": "MIT",
   "type": "module",
