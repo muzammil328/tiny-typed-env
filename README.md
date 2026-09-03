@@ -2,12 +2,6 @@
 
 Tiny typed environment loader. **No Zod required.** Also works with Zod, Valibot, and ArkType via [Standard Schema](https://standardschema.dev).
 
-Author: **Muzammal Safdar**
-
-`typed-env` is already taken on npm, so this package is named `tiny-typed-env`.
-
-See **[VERSIONS.md](./VERSIONS.md)** for what v1 includes and what v2 will add.
-
 ```ts
 import { createEnv, s } from "tiny-typed-env/node";
 
@@ -141,27 +135,3 @@ export const env = createEnv({
 
 Skip files: `createEnv(schema, { envFile: false })`.
 
-## Versions
-
-| Version | What it is |
-|---------|------------|
-| **v1.0** | Core: typed env, built-in `s.*`, Zod optional, `.env` loading, fail at boot |
-| **v1.1** | Safer errors, schema → `.env.example`, skip-validation for CI images |
-| **v2.0** | CLI (`check`, `example`), nested groups, duration/bytes helpers |
-| **v3.0** | Next/Vite adapters only if people ask |
-
-Full plan: [VERSIONS.md](./VERSIONS.md)
-
-## Publish
-
-```bash
-cd E:\tiny-typed-env
-npm login
-npm publish --access public
-```
-
-Then others run:
-
-```bash
-npm install tiny-typed-env
-```

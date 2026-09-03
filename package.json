@@ -44,12 +44,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_GITHUB/tiny-typed-env.git"
+    "url": "git+https://github.com/muzammil328/tiny-typed-env.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_GITHUB/tiny-typed-env/issues"
+    "url": "https://github.com/muzammil328/tiny-typed-env/issues"
   },
-  "homepage": "https://github.com/YOUR_GITHUB/tiny-typed-env#readme",
+  "homepage": "https://github.com/muzammil328/tiny-typed-env#readme",
   "author": "Muzammal Safdar",
   "devDependencies": {
     "@types/node": "^26.4.1",
