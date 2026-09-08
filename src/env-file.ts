@@ -41,6 +41,21 @@ export function parseEnvFile(source: string): Record<string, string> {
   return result;
 }
 
-export function exampleEnv(keys: string[]): string {
-  return keys.map((key) => `${key}=`).join("\n") + "\n";
+/**
+ * Build a `.env.example` body from schema keys or a string list.
+ *
+ * ```ts
+ * exampleEnv({ DATABASE_URL: s.url(), PORT: s.port() });
+ * // => "DATABASE_URL=\nPORT=\n"
+ *
+ * exampleEnv(["DATABASE_URL", "PORT"]);
+ * ```
+ */
+export function exampleEnv(
+  schemaOrKeys: Record<string, unknown> | readonly string[],
+): string {
+  const keys = Array.isArray(schemaOrKeys)
+    ? schemaOrKeys
+    : Object.keys(schemaOrKeys);
+  return keys.map((key) => `${key}=`).join("\n") + (keys.length ? "\n" : "");
 }

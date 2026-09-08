@@ -160,7 +160,7 @@ exampleEnv(["DATABASE_URL", "PORT"])
 
 ## Version 1.1 — Trust polish
 
-**Status:** Planned  
+**Status:** Shipped (`1.1.0`)  
 **Does not break v1**
 
 Small fixes people hit after the first install.
@@ -248,7 +248,7 @@ If a change would break existing `createEnv({ PORT: s.port() })` code, it waits 
 | Field | Value |
 |-------|-------|
 | Name | `tiny-typed-env` |
-| Version | `1.0.0` (Version 1 — Core) |
+| Version | `1.1.0` (Version 1.1 — Trust polish) |
 | Author | Muzammal Safdar |
 | License | MIT |
 | Node | >= 18 |

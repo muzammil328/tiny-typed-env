@@ -74,11 +74,12 @@ export function createEnv<T extends SchemaMap>(
   return loadEnv(schema, {
     runtimeEnv: options.runtimeEnv ?? process.env,
     emptyAsUndefined: options.emptyAsUndefined,
+    skipValidation: options.skipValidation,
   });
 }
 
 export { exampleEnv, parseEnvFile } from "./env-file";
-export { EnvError, formatIssues } from "./errors";
+export { EnvError, formatIssues, isSecretKey, redactIssueMessage } from "./errors";
 export { loadEnv, safeLoadEnv } from "./load";
 export { s } from "./schema";
 export type { InferEnv, LoadOptions, RuntimeEnv, SchemaMap } from "./load";

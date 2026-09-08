@@ -14,6 +14,11 @@ export type LoadOptions = {
   runtimeEnv?: RuntimeEnv;
   /** Treat empty strings as missing. Default: true. */
   emptyAsUndefined?: boolean;
+  /**
+   * Skip validation (Docker/CI image builds without real secrets yet).
+   * Returns `runtimeEnv` cast to the inferred env type. Default: false.
+   */
+  skipValidation?: boolean;
 };
 
 export type SafeEnv<T extends SchemaMap> =
@@ -56,6 +61,11 @@ export function safeLoadEnv<T extends SchemaMap>(
   options: LoadOptions = {},
 ): SafeEnv<T> {
   const runtimeEnv = options.runtimeEnv ?? getProcessEnv();
+
+  if (options.skipValidation) {
+    return { ok: true, data: runtimeEnv as InferEnv<T> };
+  }
+
   const emptyAsUndefined = options.emptyAsUndefined ?? true;
   const issues: EnvIssue[] = [];
   const data: Record<string, unknown> = {};

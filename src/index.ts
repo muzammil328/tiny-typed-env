@@ -1,4 +1,9 @@
-export { EnvError, formatIssues } from "./errors";
+export {
+  EnvError,
+  formatIssues,
+  isSecretKey,
+  redactIssueMessage,
+} from "./errors";
 export { exampleEnv, parseEnvFile } from "./env-file";
 export { loadEnv, safeLoadEnv } from "./load";
 export { s } from "./schema";

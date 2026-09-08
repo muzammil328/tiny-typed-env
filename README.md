@@ -160,3 +160,40 @@ export const env = createEnv({
 
 Skip files: `createEnv(schema, { envFile: false })`.
 
+### Skip validation (Docker / CI image builds)
+
+When the image build has no real secrets yet:
+
+```ts
+export const env = createEnv(schema, {
+  skipValidation: process.env.CI === "true",
+});
+```
+
+`skipValidation: true` returns the runtime env cast to the typed shape without checking.
+
+### Generate `.env.example`
+
+```ts
+import { exampleEnv, s } from "tiny-typed-env";
+
+const schema = {
+  DATABASE_URL: s.url(),
+  PORT: s.port({ default: 3000 }),
+  API_KEY: s.string(),
+};
+
+exampleEnv(schema);
+// DATABASE_URL=
+// PORT=
+// API_KEY=
+```
+
+Also accepts a string list: `exampleEnv(["DATABASE_URL", "PORT"])`.
+
+See the repo’s [`.env.example`](./.env.example) for a documented template.
+
+### Secret redaction
+
+Boot errors for keys matching `API_KEY`, `SECRET`, `TOKEN`, `PASSWORD`, and similar **never print the secret value**—only the failure reason (e.g. `Required`, `Must be at least 8 characters`).
+
