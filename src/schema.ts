@@ -339,6 +339,160 @@ export function csv(
   });
 }
 
+const DURATION_UNITS: Record<string, number> = {
+  ms: 1,
+  s: 1_000,
+  m: 60_000,
+  h: 3_600_000,
+  d: 86_400_000,
+};
+
+const DURATION_RE = /^(-?\d+(?:\.\d+)?)(ms|s|m|h|d)?$/i;
+
+/** Parse `"30s"`, `"5m"`, `"1h"`, or a bare number (ms) into milliseconds. */
+export function parseDuration(raw: string | number): number | undefined {
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+  const match = raw.trim().match(DURATION_RE);
+  if (!match?.[1]) return undefined;
+  const n = Number(match[1]);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = (match[2] ?? "ms").toLowerCase();
+  const mult = DURATION_UNITS[unit];
+  if (mult === undefined) return undefined;
+  return n * mult;
+}
+
+export type DurationConstraints = {
+  min?: number;
+  max?: number;
+};
+
+export function duration(): EnvSchema<string | undefined, number>;
+export function duration(
+  opts: DurationConstraints & OptionalOpts,
+): EnvSchema<string | undefined, number | undefined>;
+export function duration(
+  opts: DurationConstraints & DefaultOpts<string | number>,
+): EnvSchema<string | undefined, number>;
+export function duration(
+  opts: DurationConstraints & RequiredOpts,
+): EnvSchema<string | undefined, number>;
+export function duration(
+  opts: DurationConstraints & {
+    optional?: boolean;
+    default?: string | number;
+  } = {},
+): EnvSchema<string | undefined, number | undefined> {
+  const defaultMs =
+    opts.default === undefined ? undefined : parseDuration(opts.default);
+  if (opts.default !== undefined && defaultMs === undefined) {
+    throw new TypeError(`Invalid duration default: ${String(opts.default)}`);
+  }
+
+  return makeSchema((value) => {
+    const raw = asString(value);
+    if (raw === undefined || raw === "") {
+      if (defaultMs !== undefined) return ok(defaultMs);
+      if (opts.optional) return ok(undefined);
+      return fail("Required");
+    }
+    const ms = parseDuration(raw);
+    if (ms === undefined) {
+      return fail('Expected duration (e.g. "30s", "5m", "1h", or ms number)');
+    }
+    if (opts.min !== undefined && ms < opts.min) {
+      return fail(`Must be >= ${opts.min}`);
+    }
+    if (opts.max !== undefined && ms > opts.max) {
+      return fail(`Must be <= ${opts.max}`);
+    }
+    return ok(ms);
+  });
+}
+
+const BYTES_UNITS: Record<string, number> = {
+  b: 1,
+  k: 1024,
+  kb: 1024,
+  kib: 1024,
+  m: 1024 ** 2,
+  mb: 1024 ** 2,
+  mib: 1024 ** 2,
+  g: 1024 ** 3,
+  gb: 1024 ** 3,
+  gib: 1024 ** 3,
+  t: 1024 ** 4,
+  tb: 1024 ** 4,
+  tib: 1024 ** 4,
+};
+
+const BYTES_RE = /^(-?\d+(?:\.\d+)?)(b|kb|kib|mb|mib|gb|gib|tb|tib|k|m|g|t)?$/i;
+
+/** Parse `"10mb"`, `"1gb"`, or a bare number into bytes (1024-based). */
+export function parseBytes(raw: string | number): number | undefined {
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+  const match = raw.trim().match(BYTES_RE);
+  if (!match?.[1]) return undefined;
+  const n = Number(match[1]);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = (match[2] ?? "b").toLowerCase();
+  const mult = BYTES_UNITS[unit];
+  if (mult === undefined) return undefined;
+  return Math.round(n * mult);
+}
+
+export type BytesConstraints = {
+  min?: number;
+  max?: number;
+};
+
+export function bytes(): EnvSchema<string | undefined, number>;
+export function bytes(
+  opts: BytesConstraints & OptionalOpts,
+): EnvSchema<string | undefined, number | undefined>;
+export function bytes(
+  opts: BytesConstraints & DefaultOpts<string | number>,
+): EnvSchema<string | undefined, number>;
+export function bytes(
+  opts: BytesConstraints & RequiredOpts,
+): EnvSchema<string | undefined, number>;
+export function bytes(
+  opts: BytesConstraints & {
+    optional?: boolean;
+    default?: string | number;
+  } = {},
+): EnvSchema<string | undefined, number | undefined> {
+  const defaultBytes =
+    opts.default === undefined ? undefined : parseBytes(opts.default);
+  if (opts.default !== undefined && defaultBytes === undefined) {
+    throw new TypeError(`Invalid bytes default: ${String(opts.default)}`);
+  }
+
+  return makeSchema((value) => {
+    const raw = asString(value);
+    if (raw === undefined || raw === "") {
+      if (defaultBytes !== undefined) return ok(defaultBytes);
+      if (opts.optional) return ok(undefined);
+      return fail("Required");
+    }
+    const size = parseBytes(raw);
+    if (size === undefined) {
+      return fail('Expected bytes (e.g. "10mb", "1gb", or byte number)');
+    }
+    if (opts.min !== undefined && size < opts.min) {
+      return fail(`Must be >= ${opts.min}`);
+    }
+    if (opts.max !== undefined && size > opts.max) {
+      return fail(`Must be <= ${opts.max}`);
+    }
+    return ok(size);
+  });
+}
+
 /** Built-in env schemas. No Zod required. */
 export const s = {
   string,
@@ -350,4 +504,6 @@ export const s = {
   port,
   json,
   csv,
+  duration,
+  bytes,
 };

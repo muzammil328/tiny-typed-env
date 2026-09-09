@@ -88,8 +88,9 @@ tiny-typed-env/vite     ← only if demand
 | 1 | Core loader + built-in schemas + Standard Schema | ✅ | **v1.0** |
 | 2 | `.env` file loading (Node/Bun) | ✅ | **v1.0** |
 | 3 | Safer errors, example file helper, more tests | Planned | **v1.1** |
-| 4 | CLI (`check`, `example`) | Planned | **v2.0** |
-| 5 | Nested groups + secret masking in logs | Planned | **v2.0** |
+| 4 | CLI (`check`, `example`) | ✅ | **v2.0** |
+| 5 | Nested groups + secret masking in logs | ✅ | **v2.1–2.2** |
+| 5b | `s.duration()` / `s.bytes()` | ✅ | **v2.2** |
 | 6 | Framework adapters (Next, Vite) | Later | **v3.0** |
 
 ---
@@ -155,6 +156,8 @@ exampleEnv(["DATABASE_URL", "PORT"])
 | `s.port({ optional, default })` | `"3000"` → `3000` | `number` (1–65535) |
 | `s.json<T>({ optional, default })` | JSON parse | `T` |
 | `s.csv({ optional, default })` | `a, b` → `["a","b"]` | `string[]` |
+| `s.duration({ optional, default, min, max })` | `"30s"` → `30000` | `number` (ms) |
+| `s.bytes({ optional, default, min, max })` | `"10mb"` → `10485760` | `number` |
 
 ---
 
@@ -175,12 +178,13 @@ Small fixes people hit after the first install.
 
 ## Version 2.0 — CLI and safer DX
 
-**Status:** Planned  
-**This is the next real feature drop**
+**Status:** CLI + nested groups + secret masking + duration/bytes shipped (`2.2.0`)
 
 Version 2 is for people who already use v1 and want tooling around the schema.
 
-### CLI
+### CLI ✅
+
+Export `schema` from `env.ts` / `src/env.ts` (or pass `--schema`).
 
 ```bash
 npx tiny-typed-env check              # validate current env, exit 1 on failure
@@ -188,7 +192,9 @@ npx tiny-typed-env example            # write .env.example from schema
 npx tiny-typed-env example --print    # print to stdout
 ```
 
-### Nested groups (optional, additive)
+`example` sets `TINY_TYPED_ENV_SKIP_VALIDATION=1` so `createEnv(schema)` in the same file does not fail when secrets are missing.
+
+### Nested groups ✅
 
 ```ts
 export const env = createEnv({
@@ -205,13 +211,13 @@ env.server.DATABASE_URL;
 env.public.APP_URL;
 ```
 
-v1 flat schemas keep working. Groups are extra.
+v1 flat schemas keep working. Groups are extra. Leaf keys must be unique across groups.
 
-### Secret masking
+### Secret masking ✅
 
-Failed boot logs show `API_KEY: Required` — never the actual secret value.
+Failed boot logs show `API_KEY: Required` — never the actual secret value. Keys matching `API_KEY`, `SECRET`, `TOKEN`, `PASSWORD`, `*_KEY`, and similar are redacted.
 
-### `s.duration()` / `s.bytes()`
+### `s.duration()` / `s.bytes()` ✅
 
 ```ts
 TIMEOUT: s.duration({ default: "30s" })  // 30000
@@ -248,7 +254,7 @@ If a change would break existing `createEnv({ PORT: s.port() })` code, it waits 
 | Field | Value |
 |-------|-------|
 | Name | `tiny-typed-env` |
-| Version | `1.1.0` (Version 1.1 — Trust polish) |
+| Version | `2.3.0` (Version 2.3 — faster/smaller) |
 | Author | Muzammal Safdar |
 | License | MIT |
 | Node | >= 18 |

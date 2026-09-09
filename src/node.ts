@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseEnvFile } from "./env-file";
-import { loadEnv, type LoadOptions, type SchemaMap } from "./load";
+import { loadEnv, type LoadOptions, type SchemaTree } from "./load";
 
 export type NodeLoadOptions = LoadOptions & {
   /**
@@ -52,12 +52,19 @@ function defaultEnvFiles(): string[] {
  * import { createEnv, s } from "tiny-typed-env/node";
  *
  * export const env = createEnv({
- *   DATABASE_URL: s.url(),
- *   PORT: s.port({ default: 3000 }),
+ *   server: {
+ *     DATABASE_URL: s.url(),
+ *     API_KEY: s.string(),
+ *   },
+ *   public: {
+ *     APP_URL: s.url(),
+ *   },
  * });
+ *
+ * env.server.DATABASE_URL;
  * ```
  */
-export function createEnv<T extends SchemaMap>(
+export function createEnv<T extends SchemaTree>(
   schema: T,
   options: NodeLoadOptions = {},
 ) {
@@ -71,15 +78,25 @@ export function createEnv<T extends SchemaMap>(
     }
   }
 
+  const skipFromCli =
+    process.env.TINY_TYPED_ENV_SKIP_VALIDATION === "1" ||
+    process.env.TINY_TYPED_ENV_SKIP_VALIDATION === "true";
+
   return loadEnv(schema, {
     runtimeEnv: options.runtimeEnv ?? process.env,
     emptyAsUndefined: options.emptyAsUndefined,
-    skipValidation: options.skipValidation,
+    skipValidation: options.skipValidation ?? skipFromCli,
   });
 }
 
 export { exampleEnv, parseEnvFile } from "./env-file";
 export { EnvError, formatIssues, isSecretKey, redactIssueMessage } from "./errors";
-export { loadEnv, safeLoadEnv } from "./load";
-export { s } from "./schema";
-export type { InferEnv, LoadOptions, RuntimeEnv, SchemaMap } from "./load";
+export { flattenSchemaKeys, loadEnv, safeLoadEnv } from "./load";
+export { parseBytes, parseDuration, s } from "./schema";
+export type {
+  InferEnv,
+  LoadOptions,
+  RuntimeEnv,
+  SchemaMap,
+  SchemaTree,
+} from "./load";

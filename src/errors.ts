@@ -3,9 +3,12 @@ export type EnvIssue = {
   message: string;
 };
 
-/** Keys that look like secrets — values must never appear in boot errors. */
+/**
+ * Keys that look like secrets — values must never appear in boot errors.
+ * Matches API_KEY, SECRET, TOKEN, PASSWORD, STRIPE_KEY, etc.
+ */
 const SECRET_KEY =
-  /(?:^|_)(API_KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|AUTH)(?:_|$)/i;
+  /(?:^|_)(API_?KEY|SECRET|TOKEN|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|AUTH|BEARER|JWT|SALT|ENCRYPTION|SIGNING)(?:_|$)|(?:^|_)(KEY|SECRET|TOKEN|PASSWORD)$/i;
 
 export function isSecretKey(key: string): boolean {
   return SECRET_KEY.test(key);
@@ -17,6 +20,17 @@ export function isSecretKey(key: string): boolean {
  */
 export function redactIssueMessage(key: string, message: string): string {
   if (!isSecretKey(key)) return message;
+
+  // Built-in validators never embed the raw value in these forms.
+  if (
+    message === "Required" ||
+    message.startsWith("Must be") ||
+    (message.startsWith("Expected") &&
+      !/["'`]/.test(message) &&
+      !/\breceived\b/i.test(message))
+  ) {
+    return message;
+  }
 
   return message
     .replace(/\b[Rr]eceived:?\s*.+$/g, "Received: [redacted]")

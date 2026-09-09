@@ -43,10 +43,17 @@ export function parseEnvFile(source: string): Record<string, string> {
 
 /**
  * Build a `.env.example` body from schema keys or a string list.
+ * Nested groups are flattened to leaf env keys.
  *
  * ```ts
  * exampleEnv({ DATABASE_URL: s.url(), PORT: s.port() });
  * // => "DATABASE_URL=\nPORT=\n"
+ *
+ * exampleEnv({
+ *   server: { DATABASE_URL: s.url() },
+ *   public: { APP_URL: s.url() },
+ * });
+ * // => "DATABASE_URL=\nAPP_URL=\n"
  *
  * exampleEnv(["DATABASE_URL", "PORT"]);
  * ```
@@ -54,8 +61,55 @@ export function parseEnvFile(source: string): Record<string, string> {
 export function exampleEnv(
   schemaOrKeys: Record<string, unknown> | readonly string[],
 ): string {
-  const keys = Array.isArray(schemaOrKeys)
-    ? schemaOrKeys
-    : Object.keys(schemaOrKeys);
+  if (isStringList(schemaOrKeys)) {
+    return (
+      schemaOrKeys.map((key) => `${key}=`).join("\n") +
+      (schemaOrKeys.length ? "\n" : "")
+    );
+  }
+
+  const keys = flattenKeys(schemaOrKeys);
   return keys.map((key) => `${key}=`).join("\n") + (keys.length ? "\n" : "");
+}
+
+function isStringList(
+  value: Record<string, unknown> | readonly string[],
+): value is readonly string[] {
+  return Array.isArray(value);
+}
+
+function isLeafSchema(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "~standard" in value &&
+    typeof (value as { "~standard"?: { validate?: unknown } })["~standard"]
+      ?.validate === "function"
+  );
+}
+
+function flattenKeys(schema: Record<string, unknown>): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+
+  function walk(node: Record<string, unknown>): void {
+    for (const key of Object.keys(node)) {
+      const field = node[key];
+      if (isLeafSchema(field)) {
+        if (!seen.has(key)) {
+          seen.add(key);
+          keys.push(key);
+        }
+      } else if (
+        typeof field === "object" &&
+        field !== null &&
+        !Array.isArray(field)
+      ) {
+        walk(field as Record<string, unknown>);
+      }
+    }
+  }
+
+  walk(schema);
+  return keys;
 }

@@ -1,7 +1,7 @@
 {
   "name": "tiny-typed-env",
-  "version": "1.1.0",
-  "description": "Tiny typed environment loader. Built-in schemas or Zod/Valibot. Fails at boot. Works in Node, Bun, Deno, and Workers.",
+  "version": "2.3.0",
+  "description": "Tiny typed environment loader. Zero runtime deps. Built-in schemas or Zod/Valibot. Fails at boot. Works in Node, Bun, Deno, and Workers.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -9,9 +9,13 @@
     "node": ">=18"
   },
   "files": [
+    "bin",
     "dist",
     ".env.example"
   ],
+  "bin": {
+    "tiny-typed-env": "./bin/tiny-typed-env.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -41,7 +45,8 @@
     "valibot",
     "standard-schema",
     "dotenv",
-    "validation"
+    "validation",
+    "cli"
   ],
   "repository": {
     "type": "git",
@@ -50,8 +55,11 @@
   "bugs": {
     "url": "https://github.com/muzammil328/tiny-typed-env/issues"
   },
-  "homepage": "https://github.com/muzammil328/tiny-typed-env#readme",
+  "homepage": "https://tiny-typed-env-docs.vercel.app/docs/",
   "author": "Muzammal Safdar",
+  "optionalDependencies": {
+    "jiti": "^2.7.0"
+  },
   "peerDependencies": {
     "zod": ">=3.24.0"
   },
@@ -62,6 +70,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "jiti": "^2.7.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "zod": "^3.24.2"

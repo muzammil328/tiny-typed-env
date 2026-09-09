@@ -110,6 +110,128 @@ describe("loadEnv", () => {
     assert.equal(env.DATABASE_URL, "not-ready");
     assert.equal(env.API_KEY, "x");
   });
+
+  it("freezes the returned env object", () => {
+    const env = loadEnv(
+      {
+        PORT: s.port({ default: 3000 }),
+        server: { API_KEY: s.string() },
+      },
+      { runtimeEnv: { API_KEY: "secret" } },
+    );
+    assert.ok(Object.isFrozen(env));
+    assert.ok(Object.isFrozen(env.server));
+    assert.throws(() => {
+      // @ts-expect-error runtime freeze check
+      env.PORT = 1;
+    });
+  });
+});
+
+describe("nested groups", () => {
+  it("loads nested groups into nested objects", () => {
+    const env = loadEnv(
+      {
+        server: {
+          DATABASE_URL: s.url(),
+          API_KEY: s.string(),
+        },
+        public: {
+          APP_URL: s.url(),
+        },
+        PORT: s.port({ default: 3000 }),
+      },
+      {
+        runtimeEnv: {
+          DATABASE_URL: "https://db.example.com",
+          API_KEY: "secret",
+          APP_URL: "https://app.example.com",
+        },
+      },
+    );
+
+    assert.equal(env.server.DATABASE_URL, "https://db.example.com/");
+    assert.equal(env.server.API_KEY, "secret");
+    assert.equal(env.public.APP_URL, "https://app.example.com/");
+    assert.equal(env.PORT, 3000);
+  });
+
+  it("reports leaf env keys in errors", () => {
+    const result = safeLoadEnv(
+      {
+        server: {
+          DATABASE_URL: s.url(),
+          API_KEY: s.string({ min: 8 }),
+        },
+      },
+      {
+        runtimeEnv: {
+          DATABASE_URL: "not-a-url",
+          API_KEY: "short",
+        },
+      },
+    );
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.deepEqual(
+        result.error.issues.map((i) => i.key).sort(),
+        ["API_KEY", "DATABASE_URL"],
+      );
+    }
+  });
+
+  it("rejects duplicate leaf keys across groups", () => {
+    const result = safeLoadEnv(
+      {
+        server: { DATABASE_URL: s.url() },
+        other: { DATABASE_URL: s.url() },
+      },
+      {
+        runtimeEnv: {
+          DATABASE_URL: "https://db.example.com",
+        },
+      },
+    );
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.issues[0]?.key, "DATABASE_URL");
+      assert.match(result.error.issues[0]?.message ?? "", /Duplicate/);
+    }
+  });
+
+  it("skips validation while keeping nested shape", () => {
+    const env = loadEnv(
+      {
+        server: { DATABASE_URL: s.url() },
+        public: { APP_URL: s.url() },
+      },
+      {
+        skipValidation: true,
+        runtimeEnv: {
+          DATABASE_URL: "not-ready",
+          APP_URL: "also-not-ready",
+        },
+      },
+    );
+    assert.equal(env.server.DATABASE_URL, "not-ready");
+    assert.equal(env.public.APP_URL, "also-not-ready");
+  });
+
+  it("exampleEnv flattens nested group keys", () => {
+    const schema = {
+      server: {
+        DATABASE_URL: s.url(),
+        API_KEY: s.string(),
+      },
+      public: {
+        APP_URL: s.url(),
+      },
+    };
+    assert.equal(
+      exampleEnv(schema),
+      "DATABASE_URL=\nAPI_KEY=\nAPP_URL=\n",
+    );
+  });
 });
 
 describe("Zod interop", () => {
@@ -176,6 +298,83 @@ describe("secret redaction", () => {
       assert.equal(error.message.includes(secret), false);
       assert.match(formatIssues(error.issues), /API_KEY:/);
     }
+  });
+
+  it("treats *_KEY names as secrets", () => {
+    assert.equal(isSecretKey("STRIPE_KEY"), true);
+    assert.equal(isSecretKey("OPENAI_KEY"), true);
+    assert.equal(isSecretKey("JWT_SECRET"), true);
+  });
+});
+
+describe("duration and bytes", () => {
+  it("parses duration units into milliseconds", () => {
+    const env = loadEnv(
+      {
+        TIMEOUT: s.duration({ default: "30s" }),
+        SHORT: s.duration(),
+        LONG: s.duration(),
+      },
+      {
+        runtimeEnv: {
+          SHORT: "5m",
+          LONG: "1h",
+        },
+      },
+    );
+    assert.equal(env.TIMEOUT, 30_000);
+    assert.equal(env.SHORT, 300_000);
+    assert.equal(env.LONG, 3_600_000);
+  });
+
+  it("parses bare duration numbers as ms", () => {
+    const env = loadEnv(
+      { TIMEOUT: s.duration() },
+      { runtimeEnv: { TIMEOUT: "1500" } },
+    );
+    assert.equal(env.TIMEOUT, 1500);
+  });
+
+  it("rejects invalid durations", () => {
+    const result = safeLoadEnv(
+      { TIMEOUT: s.duration() },
+      { runtimeEnv: { TIMEOUT: "soon" } },
+    );
+    assert.equal(result.ok, false);
+  });
+
+  it("parses bytes units into byte counts", () => {
+    const env = loadEnv(
+      {
+        MAX_UPLOAD: s.bytes({ default: "10mb" }),
+        CACHE: s.bytes(),
+      },
+      { runtimeEnv: { CACHE: "1gb" } },
+    );
+    assert.equal(env.MAX_UPLOAD, 10 * 1024 * 1024);
+    assert.equal(env.CACHE, 1024 ** 3);
+  });
+
+  it("rejects invalid bytes", () => {
+    const result = safeLoadEnv(
+      { MAX_UPLOAD: s.bytes() },
+      { runtimeEnv: { MAX_UPLOAD: "big" } },
+    );
+    assert.equal(result.ok, false);
+  });
+
+  it("enforces min/max on duration and bytes", () => {
+    const durationResult = safeLoadEnv(
+      { TIMEOUT: s.duration({ min: 1000 }) },
+      { runtimeEnv: { TIMEOUT: "10ms" } },
+    );
+    assert.equal(durationResult.ok, false);
+
+    const bytesResult = safeLoadEnv(
+      { MAX_UPLOAD: s.bytes({ max: 1024 }) },
+      { runtimeEnv: { MAX_UPLOAD: "2kb" } },
+    );
+    assert.equal(bytesResult.ok, false);
   });
 });
 

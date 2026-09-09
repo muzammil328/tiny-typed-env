@@ -36,6 +36,52 @@ Fix your .env file or the host environment, then restart.
 npm install tiny-typed-env
 ```
 
+Core runtime has **zero dependencies**. `jiti` is optional and only used by the CLI for TypeScript schema files.
+
+## CLI
+
+Export a `schema` from `env.ts` (or `src/env.ts`):
+
+```ts
+import { createEnv, s } from "tiny-typed-env/node";
+
+export const schema = {
+  DATABASE_URL: s.url(),
+  PORT: s.port({ default: 3000 }),
+};
+
+export const env = createEnv(schema);
+```
+
+```bash
+npx tiny-typed-env check              # validate env, exit 1 on failure
+npx tiny-typed-env example            # write .env.example from schema
+npx tiny-typed-env example --print    # print to stdout
+```
+
+Options: `--schema <path>`, `--env-file <path>` (check), `--out <path>` (example).
+
+## Nested groups
+
+Group names are only for the typed object. Leaf keys are still normal env vars:
+
+```ts
+export const env = createEnv({
+  server: {
+    DATABASE_URL: s.url(),
+    API_KEY: s.string(),
+  },
+  public: {
+    APP_URL: s.url(),
+  },
+});
+
+env.server.DATABASE_URL; // from process.env.DATABASE_URL
+env.public.APP_URL;
+```
+
+Flat schemas keep working. You can mix flat keys and groups in one schema.
+
 ## Schema (full)
 
 Use built-in `s` (zero extra packages) or pass Zod, Valibot, or ArkType schemas.
@@ -65,6 +111,8 @@ npm install arktype
 | `s.port()` | `"3000"` | `number` (1–65535) |
 | `s.json()` | `'{"a":1}'` | parsed JSON |
 | `s.csv()` | `a, b, c` | `string[]` |
+| `s.duration()` | `"30s"`, `"5m"`, `"1h"`, `"1500"` | `number` (ms) |
+| `s.bytes()` | `"10mb"`, `"1gb"`, `"512"` | `number` (bytes) |
 
 Empty strings are treated as missing by default.
 
@@ -195,5 +243,14 @@ See the repo’s [`.env.example`](./.env.example) for a documented template.
 
 ### Secret redaction
 
-Boot errors for keys matching `API_KEY`, `SECRET`, `TOKEN`, `PASSWORD`, and similar **never print the secret value**—only the failure reason (e.g. `Required`, `Must be at least 8 characters`).
+Boot errors for keys matching `API_KEY`, `SECRET`, `TOKEN`, `PASSWORD`, `*_KEY`, and similar **never print the secret value**—only the failure reason (e.g. `Required`, `Must be at least 8 characters`).
+
+### Duration and bytes
+
+```ts
+export const env = createEnv({
+  TIMEOUT: s.duration({ default: "30s" }), // 30000
+  MAX_UPLOAD: s.bytes({ default: "10mb" }), // 10485760
+});
+```
 
