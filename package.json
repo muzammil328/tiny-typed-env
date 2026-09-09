@@ -14,7 +14,7 @@
     ".env.example"
   ],
   "bin": {
-    "tiny-typed-env": "./bin/tiny-typed-env.js"
+    "tiny-typed-env": "bin/tiny-typed-env.js"
   },
   "exports": {
     ".": {
